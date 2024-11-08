@@ -1,0 +1,236 @@
+To integrate your reservation system with **Appwrite** and store the reservation data from your frontend in Appwrite’s database, you need to follow these steps. I'll guide you through the process of setting up Appwrite, then modify your existing React frontend to communicate with Appwrite to store the reservation data.
+
+### **Step 1: Set Up Appwrite Backend**
+
+1. **Create an Appwrite Project**:
+   - Go to [Appwrite Console](https://appwrite.io/) and create a new project.
+   - Set up an Appwrite server either via [Docker](https://appwrite.io/docs/installation) or use Appwrite Cloud for an easier solution.
+
+2. **Create a Database**:
+   - In the Appwrite console, go to the **Database** section.
+   - Create a **Collection** called `reservations` with the following fields:
+     - `name` (String)`
+     - `email` (String)
+     - `phone` (String)
+     - `date` (Date)
+     - `time` (String)
+     - `guests` (Integer)
+     - `specialRequests` (String)
+
+3. **Set Up API Key** (if needed for authentication):
+   - In the **Settings** of Appwrite, create an API key for your React app. This is needed to authenticate requests if you want to use **Appwrite's authentication system** or set up permissions for database access.
+
+---
+
+### **Step 2: Install Appwrite SDK in Your React App**
+
+1. **Install the Appwrite SDK**:
+   In your React project, install the Appwrite SDK using npm or yarn.
+
+   ```bash
+   npm install appwrite
+   ```
+
+2. **Configure Appwrite in React**:
+   In your `ReservationsPage.js` file, import the SDK and configure the Appwrite client. You'll need to set your **Appwrite endpoint** and **project ID** from the Appwrite console.
+
+---
+
+### **Step 3: Modify Your Frontend to Send Data to Appwrite**
+
+Here's how you can modify your React component to submit the reservation data to the Appwrite backend:
+
+```jsx
+import React, { useState } from 'react';
+import Header from './Header';
+import Footer from './Footer';
+import { motion } from 'framer-motion';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+import { Client, Databases } from 'appwrite';
+
+const appwriteClient = new Client()
+  .setEndpoint('https://[YOUR_APPWRITE_ENDPOINT]') // Set your Appwrite endpoint
+  .setProject('[YOUR_PROJECT_ID]'); // Set your project ID
+
+const databases = new Databases(appwriteClient);
+
+export default function ReservationsPage() {
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [selectedTime, setSelectedTime] = useState(null);
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    date: '',
+    time: '',
+    guests: '',
+    specialRequests: '',
+  });
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prevState) => ({
+      ...prevState,
+      [name]: value,
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    // Prepare reservation data
+    const reservation = {
+      name: formData.name,
+      email: formData.email,
+      phone: formData.phone,
+      date: formData.date,  // Make sure it's formatted correctly
+      time: formData.time,
+      guests: formData.guests,
+      specialRequests: formData.specialRequests,
+    };
+
+    try {
+      // Create a new reservation in Appwrite
+      const response = await databases.createDocument(
+        'reservations', // Name of the collection in Appwrite
+        'unique()',      // Unique document ID (you can replace with a custom ID if needed)
+        reservation      // Document data
+      );
+      console.log('Reservation submitted:', response);
+      alert('Reservation submitted successfully!');
+      setFormData({
+        name: '',
+        email: '',
+        phone: '',
+        date: '',
+        time: '',
+        guests: '',
+        specialRequests: '',
+      }); // Reset the form
+    } catch (error) {
+      console.error('Error creating reservation:', error);
+      alert('There was an error submitting your reservation. Please try again.');
+    }
+  };
+
+  return (
+    <div className="bg-black text-white min-h-screen">
+      <Header />
+      <main className="py-20">
+        <div className="container mx-auto px-6">
+          <h1 className="text-4xl font-bold mb-12 text-center">Make a Reservation</h1>
+          <form onSubmit={handleSubmit} className="max-w-2xl mx-auto">
+            <div className="mb-6">
+              <label htmlFor="name" className="block text-sm font-medium text-gray-400 mb-2">Name</label>
+              <input
+                type="text"
+                id="name"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                required
+                className="w-full px-3 py-2 text-white bg-gray-800 border border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+              />
+            </div>
+
+            <div className="mb-6">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-400 mb-2">Email</label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                required
+                className="w-full px-3 py-2 text-white bg-gray-800 border border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+              />
+            </div>
+
+            <div className="mb-6">
+              <label htmlFor="phone" className="block text-sm font-medium text-gray-400 mb-2">Phone</label>
+              <input
+                type="tel"
+                id="phone"
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+                required
+                className="w-full px-3 py-2 text-white bg-gray-800 border border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+              />
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-400 mb-2">Date</label>
+              <DatePicker
+                selected={selectedDate}
+                onChange={(date) => setSelectedDate(date)}
+                dateFormat="MMMM d, yyyy"
+                minDate={new Date()}
+                className="w-full px-3 py-2 text-white bg-gray-800 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+              />
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-400 mb-2">Time</label>
+              <DatePicker
+                selected={selectedTime}
+                onChange={(time) => setSelectedTime(time)}
+                showTimeSelect
+                showTimeSelectOnly
+                timeIntervals={30}
+                timeCaption="Time"
+                dateFormat="h:mm aa"
+                className="w-full px-3 py-2 text-white bg-gray-800 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+              />
+            </div>
+
+            <div className="mb-6">
+              <label htmlFor="guests" className="block text-sm font-medium text-gray-400 mb-2">Number of Guests</label>
+              <input
+                type="number"
+                id="guests"
+                name="guests"
+                value={formData.guests}
+                onChange={handleChange}
+                required
+                min="1"
+                max="20"
+                className="w-full px-3 py-2 text-white bg-gray-800 border border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+              />
+            </div>
+
+            <div className="mb-6">
+              <label htmlFor="specialRequests" className="block text-sm font-medium text-gray-400 mb-2">Special Requests</label>
+              <textarea
+                id="specialRequests"
+                name="specialRequests"
+                value={formData.specialRequests}
+                onChange={handleChange}
+                rows="4"
+                className="w-full px-3 py-2 text-white bg-gray-800 border border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-gold"
+              ></textarea>
+            </div>
+
+            <button type="submit" className="w-full bg-gold text-black px-4 py-2 rounded-md font-semibold hover:bg-opacity-80 transition duration-300">
+              Submit Reservation
+            </button>
+          </form>
+        </div>
+      </main>
+      <Footer />
+    </div>
+  );
+}
+```
+
+### **Key Points in the Code:**
+
+1. **Appwrite Client Initialization**: 
+   The Appwrite client is initialized at the top of the file with your **Appwrite endpoint** and **project ID**.
+   
+2. **Sending Data to Appwrite**: 
+   When the form is submitted, the data is sent to Appwrite’s database using the `databases.createDocument()` method. This method creates a new document in your `reservations` collection.
+
+3. **Form Data Handling**: 
+   The form collects all the reservation details (
