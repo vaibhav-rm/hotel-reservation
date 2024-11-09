@@ -5,6 +5,7 @@ import MenuPage from './Components/MenuPage';
 import AboutPage from './Components/AboutPage';
 import ReservationsPage from './Components/ReservationPage';
 import ContactPage from './Components/ContactPage';
+import AdminDashboard from './Components/AdminDashboard';
 
 export default function App() {
   return (
@@ -16,6 +17,7 @@ export default function App() {
         <Route path="/about" element={<AboutPage />} />
         <Route path="/reservations" element={<ReservationsPage />} />
         <Route path="/contact" element={<ContactPage />} />
+        <Route path="/admin/*" element={<AdminDashboard />} />
       </Routes>
     </Router>
   );
